@@ -1,20 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Jacob\\Documents\\GitHub\\ME529-Coursework2-LiftingLineTheory\\Coursework2\\Coursework2\\Coursework2.csproj": {}
+    "C:\\Users\\Jacob\\Documents\\GitHub\\ME529-Coursework2-LiftingLineTheory\\Coursework2\\Coursework2.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Jacob\\Documents\\GitHub\\ME529-Coursework2-LiftingLineTheory\\Coursework2\\Coursework2\\Coursework2.csproj": {
+    "C:\\Users\\Jacob\\Documents\\GitHub\\ME529-Coursework2-LiftingLineTheory\\Coursework2\\Coursework2.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Jacob\\Documents\\GitHub\\ME529-Coursework2-LiftingLineTheory\\Coursework2\\Coursework2\\Coursework2.csproj",
+        "projectUniqueName": "C:\\Users\\Jacob\\Documents\\GitHub\\ME529-Coursework2-LiftingLineTheory\\Coursework2\\Coursework2.csproj",
         "projectName": "Coursework2",
-        "projectPath": "C:\\Users\\Jacob\\Documents\\GitHub\\ME529-Coursework2-LiftingLineTheory\\Coursework2\\Coursework2\\Coursework2.csproj",
+        "projectPath": "C:\\Users\\Jacob\\Documents\\GitHub\\ME529-Coursework2-LiftingLineTheory\\Coursework2\\Coursework2.csproj",
         "packagesPath": "C:\\Users\\Jacob\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Jacob\\Documents\\GitHub\\ME529-Coursework2-LiftingLineTheory\\Coursework2\\Coursework2\\obj\\",
+        "outputPath": "C:\\Users\\Jacob\\Documents\\GitHub\\ME529-Coursework2-LiftingLineTheory\\Coursework2\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
           "C:\\Users\\Jacob\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -57,7 +61,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.101\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.200\\RuntimeIdentifierGraph.json"
         }
       }
     }
