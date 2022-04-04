@@ -2,12 +2,9 @@ namespace Coursework2
 {
     public partial class Form1 : Form
     {
-        public Form1()
-        {
-            InitializeComponent();
-        }
+        public Form1() { InitializeComponent(); } //Initialising main form
 
-        private void SolveButton_Click(object sender, EventArgs e)
+        private void SolveButton_Click(object sender, EventArgs e) //Solve button routine - main program
         {
             //Input holding variables
             double span = new(); double rootchord = new(); double taper = new(); double slope = new(); double alpha = new(); double washout = new(); double AoA = new();
@@ -23,31 +20,35 @@ namespace Coursework2
 
             //Validate Inputs - value checking
             if (span <= 0 || span > 200) { LiftingLineSolver.ErrorMsg("span"); spanBox.Clear(); return; }
-            if (rootchord <= 0 || rootchord > 50) { LiftingLineSolver.ErrorMsg("span"); chordBox.Clear(); return; }
-            if (taper < 0 || taper > 2) { LiftingLineSolver.ErrorMsg("span"); taperBox.Clear(); return; }
-            if (slope <= 0 || slope > 20) { LiftingLineSolver.ErrorMsg("span"); liftCurveBox.Clear(); return; }
-            if (alpha < -15 || alpha > 15) { LiftingLineSolver.ErrorMsg("span"); zeroLiftBox.Clear(); return; }
-            if (washout < -10 || washout > -10) { LiftingLineSolver.ErrorMsg("span"); washoutBox.Clear(); return; }
-            if (AoA < -15 || AoA > 15) { LiftingLineSolver.ErrorMsg("span"); angleBox.Clear(); return; }
+            if (rootchord <= 0 || rootchord > 200) { LiftingLineSolver.ErrorMsg("chord"); chordBox.Clear(); return; }
+            if (taper < 0 || taper > 5) { LiftingLineSolver.ErrorMsg("taper"); taperBox.Clear(); return; }
+            if (slope <= 0 || slope > 25) { LiftingLineSolver.ErrorMsg("slope"); liftCurveBox.Clear(); return; }
+            if (alpha < -15 || alpha > 15) { LiftingLineSolver.ErrorMsg("zero"); zeroLiftBox.Clear(); return; }
+            if (washout < -10 || washout > 10) { LiftingLineSolver.ErrorMsg("washout"); washoutBox.Clear(); return; }
+            if (AoA < -15 || AoA > 15) { LiftingLineSolver.ErrorMsg("AoA"); angleBox.Clear(); return; }
 
-            //Creater solver object
+            //Create solver object
             LiftingLineSolver Solver = new LiftingLineSolver(span, rootchord, taper, slope, alpha, washout, AoA);
 
+            //Calculate A1,3,5,7 Coefficients
+            double[] A = Solver.CoefficientSolve();
+            double[] CLCD = Solver.LiftDragSolve();
+
+            //Print output values on form
+            A1Box.Text = A[0].ToString(); A3Box.Text = A[1].ToString(); A5Box.Text = A[2].ToString(); A7Box.Text = A[3].ToString();
+            LiftBox.Text = CLCD[0].ToString(); DragBox.Text = CLCD[1].ToString();
+
+            //Drawing wing plan
+            Solver.DrawWing(panel1);
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
+        private void Form1_Load(object sender, EventArgs e) { } //on form1 loading - (anything that should happen immediately on launch
 
-        }
-
-        private void InfoButton_Click(object sender, EventArgs e)
-        {
-
-        }
+        private void InfoButton_Click(object sender, EventArgs e) { Form2 form2 = new Form2(); form2.Show(); } //Info button - display info form
 
         public class LiftingLineSolver //Lifting Line Solver Class
         {
-            //Input Property Fields
+            //Input Property Fields - names are explanatory of what they are for
             public double span { get; set; }
             public double chord { get; set; }
             public double taper { get; set; }
@@ -56,17 +57,24 @@ namespace Coursework2
             public double washout { get; set; }
             public double AoA { get; set; }
 
+            //Output Property Fields
+            public double AR { get; set; }
+            public double[] Acoeff { get; set; }
+            public double CL { get; set; }
+            public double CD { get; set; }
+
             //Constructor
             public LiftingLineSolver(double wingspan = 1, double rootchord = 1, double wingtaper = 1, double liftslope = 5, double zeroangle = 0, double wingwashout = 0, double angleofAttack = 1)
             {
                 span = wingspan; chord = rootchord; taper = wingtaper; slope = liftslope; zerolift = zeroangle; washout = wingwashout; AoA = angleofAttack; //Setting inputs
+                AR = wingspan / ((rootchord + (rootchord * wingtaper)) / 2); //setting aspect ratio
+                Acoeff = new double[4]; //setting blank array to avoid null error
             }
 
             //Quick Error Message methods
             public static void ErrorMsg(string NameStr)
             {
                 string ErrorStr = "";
-
                 switch (NameStr)
                 {
                     case "span":
@@ -87,378 +95,326 @@ namespace Coursework2
                     default:
                         ErrorStr = "Error with Inputs, Please enter Valid Input Values"; break;
                 }
-
                 MessageBox.Show(ErrorStr); return;
             }
 
-        }
-
-
-        public class MatrixMethods
-        {
-            // #############################################################
-            //                 matrix methods
-            //
-            // https://jamesmccaffrey.wordpress.com/2015/03/06/inverting-a-matrix-using-c/
-            //
-            //############################################################## 
-
-            static double[][] MatrixCreate(int rows, int cols)
-
+            public double[] CoefficientSolve()
             {
-                double[][] result = new double[rows][];
-                for (int i = 0; i < rows; ++i)
-                    result[i] = new double[cols];
-                return result;
-            }
+                int res = 4;
 
-            static double[][] MatrixIdentity(int n)
-            {
-                // return an n x n Identity matrix
-                double[][] result = MatrixCreate(n, n);
-                for (int i = 0; i < n; ++i)
-                    result[i][i] = 1.0;
-                return result;
-            }
+                double[] Fourier = { 1, 3, 5, 7 }; //4 term fourier coefficients
+                AoA *= Math.PI / 180;
+                zerolift *= Math.PI / 180;
+                washout *= Math.PI / 180;
+                double Hspan = span / 2;
 
-            static double[][] MatrixRandom(int rows, int cols, double minVal, double maxVal, int seed)
-            {
-                // return a matrix with random values
-                Random ran = new Random(seed);
-                double[][] result = MatrixCreate(rows, cols);
-                for (int i = 0; i < rows; ++i)
-                    for (int j = 0; j < cols; ++j)
-                        result[i][j] = (maxVal - minVal) * ran.NextDouble() + minVal;
-                return result;
-            }
+                double tipchord = chord * taper; // calculate tip chord
 
-            static string MatrixAsString(double[][] matrix, int dec)
-            {
-                string s = "";
-                for (int i = 0; i < matrix.Length; ++i)
+                double[][] A = MatrixMethods.MatrixCreate(res, res); //Create A matrix for simultaneous equation solving
+                double[] b = new double[res]; //Create b vector for simultaneous equations
+
+                for (int i = 0; i < res; i++)
                 {
-                    for (int j = 0; j < matrix[i].Length; ++j)
-                        s += matrix[i][j].ToString("F" + dec).PadLeft(8) + " ";
-                    s += Environment.NewLine;
-                }
-                return s;
-            }
+                    double fraction = Convert.ToDouble(i + 1); //fraction of distance along wing
+                    double a = Math.Acos(-(fraction) / (res + 1)); //angular position
 
-            static bool MatrixAreEqual(double[][] matrixA, double[][] matrixB, double epsilon)
-            {
-                // true if all values in matrixA == values in matrixB
-                int aRows = matrixA.Length; int aCols = matrixA[0].Length;
-                int bRows = matrixB.Length; int bCols = matrixB[0].Length;
-                if (aRows != bRows || aCols != bCols)
-                    throw new Exception("Non-conformable matrices");
+                    double chordfraction = chord - (chord - tipchord) * fraction / (res + 1); //calculate chord at distance fraction due to taper
+                    double AoAfraction = AoA - washout * fraction / (res + 1);  //calculate Angle of Attack at distance fraction due to washout
+                    double u = chordfraction * slope / (Hspan * 8);    //calculate u
 
-                for (int i = 0; i < aRows; ++i) // each row of A and B
-                    for (int j = 0; j < aCols; ++j) // each col of A and B
-                                                    //if (matrixA[i][j] != matrixB[i][j])
-                        if (Math.Abs(matrixA[i][j] - matrixB[i][j]) > epsilon)
-                            return false;
-                return true;
-            }
+                    b[i] = u * (AoAfraction - zerolift) * Math.Sin(a); //assemble b vector for simultaneous equation solving
 
-            static double[][] MatrixProduct(double[][] matrixA, double[][] matrixB)
-            {
-                int aRows = matrixA.Length; int aCols = matrixA[0].Length;
-                int bRows = matrixB.Length; int bCols = matrixB[0].Length;
-                if (aCols != bRows)
-                    throw new Exception("Non-conformable matrices in MatrixProduct");
-
-                double[][] result = MatrixCreate(aRows, bCols);
-
-                for (int i = 0; i < aRows; ++i) // each row of A
-                    for (int j = 0; j < bCols; ++j) // each col of B
-                        for (int k = 0; k < aCols; ++k) // could use k less-than bRows
-                            result[i][j] += matrixA[i][k] * matrixB[k][j];
-
-                //Parallel.For(0, aRows, i =greater-than
-                //  {
-                //    for (int j = 0; j less-than bCols; ++j) // each col of B
-                //      for (int k = 0; k less-than aCols; ++k) // could use k less-than bRows
-                //        result[i][j] += matrixA[i][k] * matrixB[k][j];
-                //  }
-                //);
-
-                return result;
-            }
-
-            static double[] MatrixVectorProduct(double[][] matrix, double[] vector)
-            {
-                // result of multiplying an n x m matrix by a m x 1 
-                // column vector (yielding an n x 1 column vector)
-                int mRows = matrix.Length; int mCols = matrix[0].Length;
-                int vRows = vector.Length;
-                if (mCols != vRows)
-                    throw new Exception("Non-conformable matrix and vector");
-                double[] result = new double[mRows];
-                for (int i = 0; i < mRows; ++i)
-                    for (int j = 0; j < mCols; ++j)
-                        result[i] += matrix[i][j] * vector[j];
-                return result;
-            }
-
-            static double[][] MatrixDecompose(double[][] matrix, out int[] perm, out int toggle)
-            {
-                // Doolittle LUP decomposition with partial pivoting.
-                // rerturns: result is L (with 1s on diagonal) and U;
-                // perm holds row permutations; toggle is +1 or -1 (even or odd)
-                int rows = matrix.Length;
-                int cols = matrix[0].Length; // assume square
-                if (rows != cols)
-                    throw new Exception("Attempt to decompose a non-square m");
-
-                int n = rows; // convenience
-
-                double[][] result = MatrixDuplicate(matrix);
-
-                perm = new int[n]; // set up row permutation result
-                for (int i = 0; i < n; ++i) { perm[i] = i; }
-
-                toggle = 1; // toggle tracks row swaps.
-                            // +1 -greater-than even, -1 -greater-than odd. used by MatrixDeterminant
-
-                for (int j = 0; j < n - 1; ++j) // each column
-                {
-                    double colMax = Math.Abs(result[j][j]); // find largest val in col
-                    int pRow = j;
-                    //for (int i = j + 1; i less-than n; ++i)
-                    //{
-                    //  if (result[i][j] greater-than colMax)
-                    //  {
-                    //    colMax = result[i][j];
-                    //    pRow = i;
-                    //  }
-                    //}
-
-                    // reader Matt V needed this:
-                    for (int i = j + 1; i < n; ++i)
+                    for (int j = 0; j < res; j++)
                     {
-                        if (Math.Abs(result[i][j]) > colMax)
+                        A[i][j] = Math.Sin(Fourier[j] * a) * (u * Fourier[j] + Math.Sin(a)); //Monoplane equation into matrix
+                    }
+                }
+                A = MatrixMethods.MatrixInverse(A); //Invert matrix A to A^-1
+                Acoeff = MatrixMethods.MatrixVectorProduct(A, b); //solving simultaneous equations from matrix / vector A / b
+
+                return Acoeff; //returning A1357 coefficients 
+            }
+
+            public double[] LiftDragSolve() //Solving lift and drag coefficient routine
+            {
+                CL = Acoeff[0] * Math.PI * AR; //calculate lift coefficient
+
+                double CDa = 1; double[] Fourier = { 3, 5, 7 }; //drag coefficient calculation additional values
+                for (int i = 0; i < 3; i++) { CDa += Fourier[i] * Math.Pow(Acoeff[i + 1], 2) / Math.Pow(Acoeff[0], 2); } //calculating sum for CD
+
+                CD = ((CL * CL) / (Math.PI * AR)) * CDa; //calculate drag coefficient
+
+                double[] output = { CL, CD };
+                return output; //return coefficients in array
+            }
+
+            public void DrawWing(Panel p) //Drawing wing plan routine - give panel form object
+            {
+                //This drawing method is somewhat robust and adjusts the drawing scales for different spans and chords, it will represent the true nature of the wing shape.
+                //e.g. drawing a wing with a wider span will make the chord appear proportionately thinner, and vice versa.
+                //This method does not deal with wings that have a MUCH greater chord than span, it can deal with some slightly long-chord wings, but only to a certain point.
+                // (Around a 1.5:1 chord to span ratio is the max with this implementation
+                //This method is based on the idea of a constant drawing span width, and either scales or bases all other dimensions on the constant span.
+
+                p.Refresh(); //Refresh drawing (Clean the whiteboard)
+                int centreX = p.Width / 2; int centreY = p.Height / 2; //getting centre panel coords
+
+                //Drawing pens
+                Pen blackpen = new Pen(Color.Black, 2); Pen bluepen = new Pen(Color.Blue, 2); Pen redpen = new Pen(Color.Red, 2);
+
+                Graphics g = p.CreateGraphics(); //Creating graphics object for panel
+                g.TranslateTransform(centreX, centreY); //setting origin to centre of panel
+
+                int fuse = 20; //fuselage centre width
+                
+
+                double dspan = centreX - fuse - 1; //drawing span - always constant
+
+                double chordspan = chord / (span / 2); //calcuating chord as ratio of constant span
+
+                if (span / 2 < chord) { g.ScaleTransform(1 / Convert.ToSingle(chordspan), Convert.ToSingle(chordspan)); } //checking for chord-long wing, and scaling
+
+                int dchord = Convert.ToInt32(chordspan * dspan); int dtipchord = Convert.ToInt32(chordspan * dspan * taper); //calculating drawing distances for chord
+
+                //drawing fuselage
+                g.DrawLine(blackpen, new Point(-fuse, centreY), new Point(-fuse, -centreY)); g.DrawLine(blackpen, new Point(fuse, centreY), new Point(fuse, -centreY));
+
+                //Drawing span lines
+                g.DrawLine(bluepen, new Point(-centreX + 1, 0), new Point(-fuse, 0));
+                g.DrawLine(bluepen, new Point(centreX - 1, 0), new Point(fuse, 0));
+
+                //Drawing root chord lines
+                g.DrawLine(redpen, new Point(fuse, dchord / 2), new Point(fuse, -dchord / 2));
+                g.DrawLine(redpen, new Point(-fuse, dchord / 2), new Point(-fuse, -dchord / 2));
+
+                //drawing tip chord lines
+                g.DrawLine(redpen, new Point(centreX - 1, dtipchord / 2), new Point(centreX - 1, -dtipchord / 2));
+                g.DrawLine(redpen, new Point(-centreX + 1, dtipchord / 2), new Point(-centreX + 1, -dtipchord / 2));
+
+                //drawing upper wing edges
+                g.DrawLine(blackpen, new Point(fuse, -dchord / 2), new Point(centreX - 1, -dtipchord / 2));
+                g.DrawLine(blackpen, new Point(-fuse, -dchord / 2), new Point(-centreX + 1, -dtipchord / 2));
+
+                //drawing lower wing edges
+                g.DrawLine(blackpen, new Point(fuse, dchord / 2), new Point(centreX - 1, dtipchord / 2));
+                g.DrawLine(blackpen, new Point(-fuse, dchord / 2), new Point(-centreX + 1, dtipchord / 2));
+            }
+
+            public class MatrixMethods //class containing matrix methods supplied - source below
+            {
+                // #############################################################
+                //                 matrix methods
+                //
+                // https://jamesmccaffrey.wordpress.com/2015/03/06/inverting-a-matrix-using-c/
+                //
+                //############################################################## 
+
+                public static double[][] MatrixCreate(int rows, int cols)
+
+                {
+                    double[][] result = new double[rows][];
+                    for (int i = 0; i < rows; ++i)
+                        result[i] = new double[cols];
+                    return result;
+                }
+
+                public static double[] MatrixVectorProduct(double[][] matrix, double[] vector)
+                {
+                    // result of multiplying an n x m matrix by a m x 1 
+                    // column vector (yielding an n x 1 column vector)
+                    int mRows = matrix.Length; int mCols = matrix[0].Length;
+                    int vRows = vector.Length;
+                    if (mCols != vRows)
+                        throw new Exception("Non-conformable matrix and vector");
+                    double[] result = new double[mRows];
+                    for (int i = 0; i < mRows; ++i)
+                        for (int j = 0; j < mCols; ++j)
+                            result[i] += matrix[i][j] * vector[j];
+                    return result;
+                }
+
+                static double[][] MatrixDecompose(double[][] matrix, out int[] perm, out int toggle)
+                {
+                    // Doolittle LUP decomposition with partial pivoting.
+                    // rerturns: result is L (with 1s on diagonal) and U;
+                    // perm holds row permutations; toggle is +1 or -1 (even or odd)
+                    int rows = matrix.Length;
+                    int cols = matrix[0].Length; // assume square
+                    if (rows != cols)
+                        throw new Exception("Attempt to decompose a non-square m");
+
+                    int n = rows; // convenience
+
+                    double[][] result = MatrixDuplicate(matrix);
+
+                    perm = new int[n]; // set up row permutation result
+                    for (int i = 0; i < n; ++i) { perm[i] = i; }
+
+                    toggle = 1; // toggle tracks row swaps.
+                                // +1 -greater-than even, -1 -greater-than odd. used by MatrixDeterminant
+
+                    for (int j = 0; j < n - 1; ++j) // each column
+                    {
+                        double colMax = Math.Abs(result[j][j]); // find largest val in col
+                        int pRow = j;
+                        //for (int i = j + 1; i less-than n; ++i)
+                        //{
+                        //  if (result[i][j] greater-than colMax)
+                        //  {
+                        //    colMax = result[i][j];
+                        //    pRow = i;
+                        //  }
+                        //}
+
+                        // reader Matt V needed this:
+                        for (int i = j + 1; i < n; ++i)
                         {
-                            colMax = Math.Abs(result[i][j]);
-                            pRow = i;
+                            if (Math.Abs(result[i][j]) > colMax)
+                            {
+                                colMax = Math.Abs(result[i][j]);
+                                pRow = i;
+                            }
                         }
-                    }
-                    // Not sure if this approach is needed always, or not.
+                        // Not sure if this approach is needed always, or not.
 
-                    if (pRow != j) // if largest value not on pivot, swap rows
-                    {
-                        double[] rowPtr = result[pRow];
-                        result[pRow] = result[j];
-                        result[j] = rowPtr;
-
-                        int tmp = perm[pRow]; // and swap perm info
-                        perm[pRow] = perm[j];
-                        perm[j] = tmp;
-
-                        toggle = -toggle; // adjust the row-swap toggle
-                    }
-
-                    // --------------------------------------------------
-                    // This part added later (not in original)
-                    // and replaces the 'return null' below.
-                    // if there is a 0 on the diagonal, find a good row
-                    // from i = j+1 down that doesn't have
-                    // a 0 in column j, and swap that good row with row j
-                    // --------------------------------------------------
-
-                    if (result[j][j] == 0.0)
-                    {
-                        // find a good row to swap
-                        int goodRow = -1;
-                        for (int row = j + 1; row < n; ++row)
+                        if (pRow != j) // if largest value not on pivot, swap rows
                         {
-                            if (result[row][j] != 0.0)
-                                goodRow = row;
+                            double[] rowPtr = result[pRow];
+                            result[pRow] = result[j];
+                            result[j] = rowPtr;
+
+                            int tmp = perm[pRow]; // and swap perm info
+                            perm[pRow] = perm[j];
+                            perm[j] = tmp;
+
+                            toggle = -toggle; // adjust the row-swap toggle
                         }
 
-                        if (goodRow == -1)
-                            throw new Exception("Cannot use Doolittle's method");
+                        // --------------------------------------------------
+                        // This part added later (not in original)
+                        // and replaces the 'return null' below.
+                        // if there is a 0 on the diagonal, find a good row
+                        // from i = j+1 down that doesn't have
+                        // a 0 in column j, and swap that good row with row j
+                        // --------------------------------------------------
 
-                        // swap rows so 0.0 no longer on diagonal
-                        double[] rowPtr = result[goodRow];
-                        result[goodRow] = result[j];
-                        result[j] = rowPtr;
-
-                        int tmp = perm[goodRow]; // and swap perm info
-                        perm[goodRow] = perm[j];
-                        perm[j] = tmp;
-
-                        toggle = -toggle; // adjust the row-swap toggle
-                    }
-                    // --------------------------------------------------
-                    // if diagonal after swap is zero . .
-                    //if (Math.Abs(result[j][j]) less-than 1.0E-20) 
-                    //  return null; // consider a throw
-
-                    for (int i = j + 1; i < n; ++i)
-                    {
-                        result[i][j] /= result[j][j];
-                        for (int k = j + 1; k < n; ++k)
+                        if (result[j][j] == 0.0)
                         {
-                            result[i][k] -= result[i][j] * result[j][k];
+                            // find a good row to swap
+                            int goodRow = -1;
+                            for (int row = j + 1; row < n; ++row)
+                            {
+                                if (result[row][j] != 0.0)
+                                    goodRow = row;
+                            }
+
+                            if (goodRow == -1)
+                                throw new Exception("Cannot use Doolittle's method");
+
+                            // swap rows so 0.0 no longer on diagonal
+                            double[] rowPtr = result[goodRow];
+                            result[goodRow] = result[j];
+                            result[j] = rowPtr;
+
+                            int tmp = perm[goodRow]; // and swap perm info
+                            perm[goodRow] = perm[j];
+                            perm[j] = tmp;
+
+                            toggle = -toggle; // adjust the row-swap toggle
                         }
-                    }
+                        // --------------------------------------------------
+                        // if diagonal after swap is zero . .
+                        //if (Math.Abs(result[j][j]) less-than 1.0E-20) 
+                        //  return null; // consider a throw
 
-
-                } // main j column loop
-
-                return result;
-            } // MatrixDecompose
-
-            static double[][] MatrixInverse(double[][] matrix)
-            {
-                int n = matrix.Length;
-                double[][] result = MatrixDuplicate(matrix);
-
-                int[] perm;
-                int toggle;
-                double[][] lum = MatrixDecompose(matrix, out perm, out toggle);
-                if (lum == null)
-                    throw new Exception("Unable to compute inverse");
-
-                double[] b = new double[n];
-                for (int i = 0; i < n; ++i)
-                {
-                    for (int j = 0; j < n; ++j)
-                    {
-                        if (i == perm[j])
-                            b[j] = 1.0;
-                        else
-                            b[j] = 0.0;
-                    }
-
-                    double[] x = HelperSolve(lum, b); // 
-
-                    for (int j = 0; j < n; ++j)
-                        result[j][i] = x[j];
-                }
-                return result;
-            }
-
-            static double MatrixDeterminant(double[][] matrix)
-            {
-                int[] perm;
-                int toggle;
-                double[][] lum = MatrixDecompose(matrix, out perm, out toggle);
-                if (lum == null)
-                    throw new Exception("Unable to compute MatrixDeterminant");
-                double result = toggle;
-                for (int i = 0; i < lum.Length; ++i)
-                    result *= lum[i][i];
-                return result;
-            }
-
-            static double[] HelperSolve(double[][] luMatrix, double[] b)
-            {
-                // before calling this helper, permute b using the perm array
-                // from MatrixDecompose that generated luMatrix
-                int n = luMatrix.Length;
-                double[] x = new double[n];
-                b.CopyTo(x, 0);
-
-                for (int i = 1; i < n; ++i)
-                {
-                    double sum = x[i];
-                    for (int j = 0; j < i; ++j)
-                        sum -= luMatrix[i][j] * x[j];
-                    x[i] = sum;
-                }
-
-                x[n - 1] /= luMatrix[n - 1][n - 1];
-                for (int i = n - 2; i >= 0; --i)
-                {
-                    double sum = x[i];
-                    for (int j = i + 1; j < n; ++j)
-                        sum -= luMatrix[i][j] * x[j];
-                    x[i] = sum / luMatrix[i][i];
-                }
-
-                return x;
-            }
-
-            static double[] SystemSolve(double[][] A, double[] b)
-            {
-                // Solve Ax = b
-                int n = A.Length;
-
-                // 1. decompose A
-                int[] perm;
-                int toggle;
-                double[][] luMatrix = MatrixDecompose(A, out perm,
-                  out toggle);
-                if (luMatrix == null)
-                    return null;
-
-                // 2. permute b according to perm[] into bp
-                double[] bp = new double[b.Length];
-                for (int i = 0; i < n; ++i)
-                    bp[i] = b[perm[i]];
-
-                // 3. call helper
-                double[] x = HelperSolve(luMatrix, bp);
-                return x;
-            } // SystemSolve
-
-            static double[][] MatrixDuplicate(double[][] matrix)
-            {
-                // allocates/creates a duplicate of a matrix.
-                double[][] result = MatrixCreate(matrix.Length, matrix[0].Length);
-                for (int i = 0; i < matrix.Length; ++i) // copy the values
-                    for (int j = 0; j < matrix[i].Length; ++j)
-                        result[i][j] = matrix[i][j];
-                return result;
-            }
-
-            static double[] MatrixBackSub(double[][] luMatrix, int[] indx, double[] b)
-            {
-                int rows = luMatrix.Length;
-                int cols = luMatrix[0].Length;
-                if (rows != cols)
-                    throw new Exception("Non-square LU mattrix");
-
-                int ii = 0; int ip = 0;
-                int n = b.Length;
-                double sum = 0.0;
-
-                double[] x = new double[b.Length];
-                b.CopyTo(x, 0);
-
-                for (int i = 0; i < n; ++i)
-                {
-                    ip = indx[i];
-                    sum = x[ip];
-                    x[ip] = x[i]; //
-                    if (ii == 0)
-                    {
-                        for (int j = ii; j <= i - 1; ++j)
+                        for (int i = j + 1; i < n; ++i)
                         {
+                            result[i][j] /= result[j][j];
+                            for (int k = j + 1; k < n; ++k)
+                            {
+                                result[i][k] -= result[i][j] * result[j][k];
+                            }
+                        }
+
+
+                    } // main j column loop
+
+                    return result;
+                } // MatrixDecompose
+
+                public static double[][] MatrixInverse(double[][] matrix)
+                {
+                    int n = matrix.Length;
+                    double[][] result = MatrixDuplicate(matrix);
+
+                    int[] perm;
+                    int toggle;
+                    double[][] lum = MatrixDecompose(matrix, out perm, out toggle);
+                    if (lum == null)
+                        throw new Exception("Unable to compute inverse");
+
+                    double[] b = new double[n];
+                    for (int i = 0; i < n; ++i)
+                    {
+                        for (int j = 0; j < n; ++j)
+                        {
+                            if (i == perm[j])
+                                b[j] = 1.0;
+                            else
+                                b[j] = 0.0;
+                        }
+
+                        double[] x = HelperSolve(lum, b); // 
+
+                        for (int j = 0; j < n; ++j)
+                            result[j][i] = x[j];
+                    }
+                    return result;
+                }
+
+                static double[] HelperSolve(double[][] luMatrix, double[] b)
+                {
+                    // before calling this helper, permute b using the perm array
+                    // from MatrixDecompose that generated luMatrix
+                    int n = luMatrix.Length;
+                    double[] x = new double[n];
+                    b.CopyTo(x, 0);
+
+                    for (int i = 1; i < n; ++i)
+                    {
+                        double sum = x[i];
+                        for (int j = 0; j < i; ++j)
                             sum -= luMatrix[i][j] * x[j];
-                        }
+                        x[i] = sum;
                     }
-                    else if (sum == 0.0)
+
+                    x[n - 1] /= luMatrix[n - 1][n - 1];
+                    for (int i = n - 2; i >= 0; --i)
                     {
-                        ii = i;
+                        double sum = x[i];
+                        for (int j = i + 1; j < n; ++j)
+                            sum -= luMatrix[i][j] * x[j];
+                        x[i] = sum / luMatrix[i][i];
                     }
-                    x[i] = sum;
-                } // i
 
-                for (int i = n - 1; i >= 0; --i) // note I change increment from -i to --i
-                {
-                    sum = x[i];
-                    for (int j = i + 1; j < n; ++j)
-                    { sum -= luMatrix[i][j] * x[j]; }
-                    x[i] = sum / luMatrix[i][i];
+                    return x;
                 }
-                return x;
-            } // MatrixBackSub
 
-            // ####################################################
+                static double[][] MatrixDuplicate(double[][] matrix)
+                {
+                    // allocates/creates a duplicate of a matrix.
+                    double[][] result = MatrixCreate(matrix.Length, matrix[0].Length);
+                    for (int i = 0; i < matrix.Length; ++i) // copy the values
+                        for (int j = 0; j < matrix[i].Length; ++j)
+                            result[i][j] = matrix[i][j];
+                    return result;
+                }
+
+                // ####################################################
+            }
+
         }
 
-
+        private void panel1_Paint(object sender, PaintEventArgs e) { } //panel painting method override
     }
 }

@@ -147,6 +147,7 @@
             this.spanBox.Name = "spanBox";
             this.spanBox.Size = new System.Drawing.Size(100, 23);
             this.spanBox.TabIndex = 9;
+            this.spanBox.Text = "9";
             // 
             // chordBox
             // 
@@ -154,6 +155,7 @@
             this.chordBox.Name = "chordBox";
             this.chordBox.Size = new System.Drawing.Size(100, 23);
             this.chordBox.TabIndex = 10;
+            this.chordBox.Text = "1.5";
             // 
             // taperBox
             // 
@@ -161,6 +163,7 @@
             this.taperBox.Name = "taperBox";
             this.taperBox.Size = new System.Drawing.Size(100, 23);
             this.taperBox.TabIndex = 11;
+            this.taperBox.Text = "1";
             // 
             // liftCurveBox
             // 
@@ -168,6 +171,7 @@
             this.liftCurveBox.Name = "liftCurveBox";
             this.liftCurveBox.Size = new System.Drawing.Size(100, 23);
             this.liftCurveBox.TabIndex = 12;
+            this.liftCurveBox.Text = "5.93";
             // 
             // angleBox
             // 
@@ -175,6 +179,7 @@
             this.angleBox.Name = "angleBox";
             this.angleBox.Size = new System.Drawing.Size(100, 23);
             this.angleBox.TabIndex = 15;
+            this.angleBox.Text = "6";
             // 
             // washoutBox
             // 
@@ -182,6 +187,7 @@
             this.washoutBox.Name = "washoutBox";
             this.washoutBox.Size = new System.Drawing.Size(100, 23);
             this.washoutBox.TabIndex = 14;
+            this.washoutBox.Text = "0";
             // 
             // zeroLiftBox
             // 
@@ -189,6 +195,7 @@
             this.zeroLiftBox.Name = "zeroLiftBox";
             this.zeroLiftBox.Size = new System.Drawing.Size(100, 23);
             this.zeroLiftBox.TabIndex = 13;
+            this.zeroLiftBox.Text = "0";
             // 
             // DragBox
             // 
@@ -316,12 +323,13 @@
             // 
             this.panel1.Location = new System.Drawing.Point(12, 5);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(362, 258);
+            this.panel1.Size = new System.Drawing.Size(362, 292);
             this.panel1.TabIndex = 36;
+            this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
             // 
             // InfoButton
             // 
-            this.InfoButton.Location = new System.Drawing.Point(695, 300);
+            this.InfoButton.Location = new System.Drawing.Point(695, 248);
             this.InfoButton.Name = "InfoButton";
             this.InfoButton.Size = new System.Drawing.Size(75, 40);
             this.InfoButton.TabIndex = 37;
@@ -395,7 +403,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(784, 361);
+            this.ClientSize = new System.Drawing.Size(784, 301);
             this.Controls.Add(this.InfoButton);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.label15);
@@ -435,8 +443,8 @@
             this.Controls.Add(this.label17);
             this.Controls.Add(this.label16);
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(800, 400);
-            this.MinimumSize = new System.Drawing.Size(800, 400);
+            this.MaximumSize = new System.Drawing.Size(800, 340);
+            this.MinimumSize = new System.Drawing.Size(800, 340);
             this.Name = "Form1";
             this.Text = "Lifting Line Theory Calculator - Coursework 2";
             this.Load += new System.EventHandler(this.Form1_Load);

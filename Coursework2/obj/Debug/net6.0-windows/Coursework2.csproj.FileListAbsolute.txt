@@ -15,3 +15,4 @@ C:\Users\Jacob\Documents\GitHub\ME529-Coursework2-LiftingLineTheory\Coursework2\
 C:\Users\Jacob\Documents\GitHub\ME529-Coursework2-LiftingLineTheory\Coursework2\obj\Debug\net6.0-windows\ref\Coursework2.dll
 C:\Users\Jacob\Documents\GitHub\ME529-Coursework2-LiftingLineTheory\Coursework2\obj\Debug\net6.0-windows\Coursework2.pdb
 C:\Users\Jacob\Documents\GitHub\ME529-Coursework2-LiftingLineTheory\Coursework2\obj\Debug\net6.0-windows\Coursework2.genruntimeconfig.cache
+C:\Users\Jacob\Documents\GitHub\ME529-Coursework2-LiftingLineTheory\Coursework2\obj\Debug\net6.0-windows\Coursework2.Form2.resources
