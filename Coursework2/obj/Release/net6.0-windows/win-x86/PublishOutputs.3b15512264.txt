@@ -1,0 +1,7 @@
+C:\Users\Jacob\Desktop\Coursework2.pdb
+C:\Users\Jacob\Desktop\D3DCompiler_47_cor3.dll
+C:\Users\Jacob\Desktop\PenImc_cor3.dll
+C:\Users\Jacob\Desktop\PresentationNative_cor3.dll
+C:\Users\Jacob\Desktop\vcruntime140_cor3.dll
+C:\Users\Jacob\Desktop\wpfgfx_cor3.dll
+C:\Users\Jacob\Desktop\Coursework2.exe
